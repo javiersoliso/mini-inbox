@@ -54,6 +54,10 @@ describe("/api/conversations", () => {
 
     const messages = await app.inject({ method: "GET", url: "/api/conversations/c3/messages" });
     expect(messages.json()).toHaveLength(2);
+
+    // La conversación respondida pasa a ser la más reciente de la bandeja.
+    const inbox = await app.inject({ method: "GET", url: "/api/conversations" });
+    expect(inbox.json()[0]).toMatchObject({ id: "c3", lastMessage: "Abren la próxima semana." });
   });
 
   it("rechaza mensajes vacíos", async () => {

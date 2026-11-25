@@ -1,7 +1,7 @@
 import type { CreateConversationBody, SendMessageBody } from "@mini-inbox/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { conversationKeys } from "./query-keys";
+import { conversationKeys, invalidateAfterSendMessage } from "./query-keys";
 
 export function useConversations() {
   return useQuery({
@@ -28,8 +28,7 @@ export function useSendMessage(conversationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: SendMessageBody) => api.sendMessage(conversationId, body),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: conversationKeys.messages(conversationId) }),
+    onSuccess: () => invalidateAfterSendMessage(queryClient),
   });
 }
 
