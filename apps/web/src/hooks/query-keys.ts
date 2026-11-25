@@ -1,3 +1,4 @@
+import type { StatusFilter } from "@mini-inbox/types";
 import type { QueryClient } from "@tanstack/react-query";
 
 const all = ["conversations"] as const;
@@ -8,7 +9,8 @@ const all = ["conversations"] as const;
  */
 export const conversationKeys = {
   all,
-  list: () => [...all, "list"] as const,
+  lists: () => [...all, "list"] as const,
+  list: (status: StatusFilter) => [...all, "list", status] as const,
   detail: (id: string) => [...all, "detail", id] as const,
   messages: (id: string) => [...all, "detail", id, "messages"] as const,
 };

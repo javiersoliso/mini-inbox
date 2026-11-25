@@ -1,17 +1,25 @@
+import type { StatusFilter } from "@mini-inbox/types";
 import { useConversations } from "../hooks/conversations";
 import { formatDateTime } from "../lib/format";
 
+const EMPTY_TEXT: Record<StatusFilter, string> = {
+  open: "No hay conversaciones abiertas.",
+  resolved: "No hay conversaciones resueltas.",
+  all: "No hay conversaciones.",
+};
+
 interface ConversationListProps {
+  status: StatusFilter;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }
 
-export function ConversationList({ selectedId, onSelect }: ConversationListProps) {
-  const { data: conversations, isPending, isError } = useConversations();
+export function ConversationList({ status, selectedId, onSelect }: ConversationListProps) {
+  const { data: conversations, isPending, isError } = useConversations(status);
 
   if (isPending) return <p className="muted">Cargando…</p>;
   if (isError) return <p className="error">No se pudo cargar la bandeja.</p>;
-  if (conversations.length === 0) return <p className="muted">No hay conversaciones.</p>;
+  if (conversations.length === 0) return <p className="muted">{EMPTY_TEXT[status]}</p>;
 
   return (
     <ul className="conversation-list">
@@ -29,6 +37,7 @@ export function ConversationList({ selectedId, onSelect }: ConversationListProps
               </time>
             </span>
             <span className="preview">{conversation.lastMessage || "Sin mensajes"}</span>
+            {conversation.status === "resolved" && <span className="badge">Resuelta</span>}
           </button>
         </li>
       ))}
