@@ -7,7 +7,19 @@ import { z } from "zod";
  */
 export const DateTimeSchema = z.iso.datetime();
 
-export const PhoneSchema = z.string().regex(/^\+\d{10,15}$/, "Número de teléfono inválido");
+const PHONE_ERROR = "Número inválido: incluye el indicativo del país, p. ej. +57 300 123 4567";
+
+/** Número como se guarda y como lo usa WhatsApp: formato E.164, p. ej. "+573001234567". */
+export const PhoneSchema = z.e164({ error: PHONE_ERROR });
+
+/**
+ * Número como lo escribe una persona ("+57 300 123 4567", "+57 (300) 123-4567"):
+ * se quitan espacios, guiones, puntos y paréntesis, y el resultado debe ser E.164.
+ */
+export const PhoneInputSchema = z
+  .string()
+  .transform((value) => value.replace(/[\s().-]/g, ""))
+  .pipe(PhoneSchema);
 
 export const MessageAuthorSchema = z.enum(["contact", "agent"]);
 export type MessageAuthor = z.infer<typeof MessageAuthorSchema>;
@@ -36,9 +48,12 @@ export const ConversationParamsSchema = z.object({
 
 export const CreateConversationBodySchema = z.object({
   contactName: z.string().trim().min(1, "El nombre es obligatorio"),
-  phone: PhoneSchema,
+  phone: PhoneInputSchema,
 });
-export type CreateConversationBody = z.infer<typeof CreateConversationBodySchema>;
+/** Lo que envía el cliente (teléfono tal como lo escribió la persona). */
+export type CreateConversationInput = z.input<typeof CreateConversationBodySchema>;
+/** Lo que recibe la API después de validar (teléfono ya normalizado). */
+export type CreateConversationBody = z.output<typeof CreateConversationBodySchema>;
 
 export const SendMessageBodySchema = z.object({
   text: z.string().trim().min(1, "El mensaje no puede estar vacío").max(4096),

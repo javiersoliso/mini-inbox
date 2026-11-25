@@ -1,6 +1,6 @@
 import {
   ConversationSchema,
-  type CreateConversationBody,
+  type CreateConversationInput,
   MessageSchema,
   type SendMessageBody,
 } from "@mini-inbox/types";
@@ -49,7 +49,7 @@ export const api = {
 
   listMessages: (id: string) => request(`${conversationPath(id)}/messages`, z.array(MessageSchema)),
 
-  createConversation: (body: CreateConversationBody) =>
+  createConversation: (body: CreateConversationInput) =>
     request("/api/conversations", ConversationSchema, {
       method: "POST",
       body: JSON.stringify(body),
