@@ -1,4 +1,4 @@
-import type { MessageAuthor } from "@mini-inbox/types";
+import type { ConversationStatus, MessageAuthor } from "@mini-inbox/types";
 
 /**
  * Datos de ejemplo tal como los entrega el proveedor de WhatsApp.
@@ -15,6 +15,8 @@ export interface SeedConversation {
   id: string;
   contactName: string;
   phone: string;
+  /** Si no se indica, la conversación está abierta. */
+  status?: ConversationStatus;
   messages: SeedMessage[];
 }
 
@@ -47,6 +49,7 @@ export const seedConversations: SeedConversation[] = [
   {
     id: "c2",
     contactName: "Andrés Rojas",
+    status: "resolved",
     phone: "+573109876543",
     messages: [
       {
@@ -104,6 +107,7 @@ export const seedConversations: SeedConversation[] = [
   {
     id: "c5",
     contactName: "Camila Ortiz",
+    status: "resolved",
     phone: "+573004445566",
     messages: [
       {

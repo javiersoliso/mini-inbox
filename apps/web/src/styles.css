@@ -63,6 +63,32 @@ button:disabled {
   cursor: default;
 }
 
+.status-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.status-tabs button {
+  flex: 1;
+  background: #fff;
+  color: #3e4c59;
+}
+
+.status-tabs button[aria-pressed="true"] {
+  background: #3e4c59;
+  color: #fff;
+}
+
+.badge {
+  justify-self: start;
+  border-radius: 999px;
+  background: #e4e7eb;
+  color: #52606d;
+  font-size: 0.75rem;
+  padding: 1px 8px;
+}
+
 .conversation-list {
   list-style: none;
   margin: 0;

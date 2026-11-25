@@ -29,6 +29,18 @@ describe("/api/conversations", () => {
     expect(response.json()).toMatchObject({ contactName: "Daniela Ríos", phone: "+573001112233" });
   });
 
+  it("acepta el número tal como lo dan y lo guarda normalizado", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/conversations",
+      payload: { contactName: "Daniela Ríos", phone: "+57 300 123 4567" },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({ phone: "+573001234567" });
+  });
+
   it("rechaza datos inválidos al crear una conversación", async () => {
     const app = buildApp();
     const response = await app.inject({
@@ -54,6 +66,10 @@ describe("/api/conversations", () => {
 
     const messages = await app.inject({ method: "GET", url: "/api/conversations/c3/messages" });
     expect(messages.json()).toHaveLength(2);
+
+    // La conversación respondida pasa a ser la más reciente de la bandeja.
+    const inbox = await app.inject({ method: "GET", url: "/api/conversations" });
+    expect(inbox.json()[0]).toMatchObject({ id: "c3", lastMessage: "Abren la próxima semana." });
   });
 
   it("rechaza mensajes vacíos", async () => {

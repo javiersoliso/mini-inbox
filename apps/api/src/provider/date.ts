@@ -1,17 +1,38 @@
-const providerDateFormat = new Intl.DateTimeFormat("es-CO", {
-  timeZone: "America/Bogota",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
+/** Colombia está en UTC−5 todo el año (no tiene horario de verano). */
+const COLOMBIA_UTC_OFFSET_MINUTES = -5 * 60;
 
-/** Formatea una fecha igual que el proveedor de WhatsApp: "dd/mm/yyyy HH:mm" (hora de Colombia). */
-export function formatProviderDate(date: Date): string {
-  const parts = Object.fromEntries(
-    providerDateFormat.formatToParts(date).map((part) => [part.type, part.value]),
-  );
-  return `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}`;
+const PROVIDER_DATE = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
+
+export class InvalidProviderDateError extends Error {
+  constructor(value: string) {
+    super(`Fecha del proveedor inválida: "${value}" (se espera dd/mm/yyyy HH:mm)`);
+    this.name = "InvalidProviderDateError";
+  }
+}
+
+/**
+ * Convierte una fecha del proveedor de WhatsApp ("dd/mm/yyyy HH:mm", hora de Colombia)
+ * en un instante absoluto.
+ *
+ * Se parsea a mano porque `new Date()` no sirve para este formato: lo interpreta como
+ * mm/dd (o lo rechaza), depende de la zona horaria de la máquina y además "corrige"
+ * fechas imposibles (31/02 → 3 de marzo) en vez de fallar.
+ */
+export function parseProviderDate(value: string): Date {
+  const match = PROVIDER_DATE.exec(value);
+  if (!match) throw new InvalidProviderDateError(value);
+
+  const [day, month, year, hour, minute] = match.slice(1).map(Number);
+  const asIfUtc = new Date(Date.UTC(year, month - 1, day, hour, minute));
+
+  // Si Date.UTC tuvo que "corregir" algún campo, la fecha no existe.
+  const isRealDate =
+    asIfUtc.getUTCFullYear() === year &&
+    asIfUtc.getUTCMonth() === month - 1 &&
+    asIfUtc.getUTCDate() === day &&
+    asIfUtc.getUTCHours() === hour &&
+    asIfUtc.getUTCMinutes() === minute;
+  if (!isRealDate) throw new InvalidProviderDateError(value);
+
+  return new Date(asIfUtc.getTime() - COLOMBIA_UTC_OFFSET_MINUTES * 60_000);
 }

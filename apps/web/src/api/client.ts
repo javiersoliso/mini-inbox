@@ -1,8 +1,10 @@
 import {
   ConversationSchema,
-  type CreateConversationBody,
+  type CreateConversationInput,
   MessageSchema,
   type SendMessageBody,
+  type StatusFilter,
+  type UpdateConversationBody,
 } from "@mini-inbox/types";
 import { z } from "zod";
 
@@ -43,13 +45,20 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
 const conversationPath = (id: string) => `/api/conversations/${encodeURIComponent(id)}`;
 
 export const api = {
-  listConversations: () => request("/api/conversations", z.array(ConversationSchema)),
+  listConversations: (status: StatusFilter) =>
+    request(`/api/conversations?${new URLSearchParams({ status })}`, z.array(ConversationSchema)),
+
+  updateConversation: (id: string, body: UpdateConversationBody) =>
+    request(conversationPath(id), ConversationSchema, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 
   getConversation: (id: string) => request(conversationPath(id), ConversationSchema),
 
   listMessages: (id: string) => request(`${conversationPath(id)}/messages`, z.array(MessageSchema)),
 
-  createConversation: (body: CreateConversationBody) =>
+  createConversation: (body: CreateConversationInput) =>
     request("/api/conversations", ConversationSchema, {
       method: "POST",
       body: JSON.stringify(body),
