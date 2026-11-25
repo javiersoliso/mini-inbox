@@ -15,7 +15,9 @@ sobre esa reconstrucción.
 Como el punto de partida lo escribí yo, los errores están **modelados a partir de los
 síntomas** del enunciado. No puedo afirmar que la causa raíz en el repositorio original sea
 exactamente la misma. Lo que sí se puede llevar tal cual es el método: reproducir, formular
-una hipótesis, comprobarla y corregir donde nace el problema. Si me comparten el repositorio,
+una hipótesis, comprobarla y corregir donde nace el problema. En la sección
+[Cómo buscaría la causa raíz en el repositorio original](#cómo-buscaría-la-causa-raíz-en-el-repositorio-original)
+detallo qué hipótesis revisaría y cómo las distinguiría. Si me comparten el repositorio,
 aplico la solución allí.
 
 ## Errores
@@ -99,6 +101,48 @@ aplico la solución allí.
     que recibe la API ya validado).
   - **Decisión:** un número sin indicativo (`300 123 4567`) se sigue rechazando, porque no
     se puede saber de qué país es. El mensaje de error dice cómo escribirlo.
+
+## Cómo buscaría la causa raíz en el repositorio original
+
+En la reconstrucción yo elegí la causa de cada error, así que ahí el diagnóstico es en parte
+circular. En el repositorio real seguiría estos pasos:
+
+1. **Reproducir el síntoma** con un test o una petición antes de tocar código.
+2. **Recorrer el dato hacia atrás** desde donde se ve mal: componente → hook → `client.ts` →
+   ruta → store → seed o webhook. Me detengo en el primer punto donde el dato ya llega dañado.
+3. **Distinguir entre hipótesis con evidencia**, no por intuición (tablas de abajo).
+4. **Preguntar "¿por qué?" hasta llegar a donde nace el problema** y corregir ahí, no donde se
+   nota.
+5. **Comprobar que el test falla** con el código original y pasa con la corrección.
+
+### Error 1 — bandeja desordenada
+
+| Hipótesis                                | Qué la delata                                                                                                                | Cómo la compruebo                                                                                       |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Fechas comparadas como texto             | El orden lo decide el día del mes ("30/10" y "28/12/2025" quedan encima de "24/11")                                          | Leer el comparador de `sort.ts` y el tipo de `lastMessageAt` en `packages/types`                        |
+| `new Date()` interpreta mal `dd/mm/yyyy` | Con día ≤ 12 se invierten mes y día; con día > 12 sale `Invalid Date` y el orden se vuelve errático (`NaN` en el comparador) | Probar fechas del seed con `bun -e "new Date('24/11/2026 10:00')"` y buscar `new Date(` y `Date.parse(` |
+| Zona horaria                             | Conversaciones del mismo día cruzadas por unas 5 horas, y el resultado cambia según la máquina                               | Correr el test con `TZ=UTC` y con `TZ=America/Bogota`                                                   |
+| El comparador devuelve un booleano       | El orden es inconsistente aunque las fechas estén bien                                                                       | Revisar que la función de `sort` devuelva un número                                                     |
+
+### Error 2 — la bandeja no se actualiza al responder
+
+Que recargar lo arregle descarta al backend: el servidor ya tiene el dato correcto. Lo confirmo
+mirando la respuesta de `GET /api/conversations` justo después de enviar (pestaña Network).
+
+| Hipótesis                                                                                                         | Cómo la compruebo                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| El `onSuccess` del envío invalida solo los mensajes                                                               | Leer el `useMutation` de envío en `hooks/`                                                                                           |
+| Las claves no comparten prefijo (`["conversations"]` y `["messages", id]`), así que invalidar una no toca la otra | Listar las `queryKey` de `hooks/` y ver cuáles quedan desactualizadas al enviar (React Query Devtools o `queryClient.getQueryState`) |
+| `staleTime: Infinity` u otra opción que impide volver a pedir los datos                                           | Revisar la configuración del `QueryClient` en `main.tsx`                                                                             |
+| Se edita la caché a mano (`setQueryData`) solo para los mensajes                                                  | Buscar `setQueryData`                                                                                                                |
+
+### Error 3 — no acepta "+57 300 123 4567"
+
+| Hipótesis                                   | Cómo la compruebo                                                                            |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Regex sin espacios en el esquema compartido | Enviar el número directo a la API con `curl`: si responde 400, el rechazo está en el esquema |
+| Validación solo en el formulario de la web  | Si la API lo acepta por `curl` y la web no, el problema está en el componente                |
+| No se normaliza antes de validar            | Leer el esquema y ver si hay un `transform` o un `preprocess` antes de la regex              |
 
 ## Nueva funcionalidad
 
