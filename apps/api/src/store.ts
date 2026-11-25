@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { Conversation, CreateConversationBody, Message } from "@mini-inbox/types";
+import type {
+  Conversation,
+  ConversationStatus,
+  CreateConversationBody,
+  Message,
+  StatusFilter,
+} from "@mini-inbox/types";
 import { type SeedConversation, seedConversations } from "./data/seed";
 import { parseProviderDate } from "./provider/date";
 
@@ -23,6 +29,7 @@ export class Store {
         id: item.id,
         contactName: item.contactName,
         phone: item.phone,
+        status: item.status ?? "open",
         lastMessage: last?.text ?? "",
         lastMessageAt: last?.sentAt ?? now(),
       });
@@ -30,8 +37,18 @@ export class Store {
     }
   }
 
-  listConversations(): Conversation[] {
-    return [...this.conversations.values()];
+  listConversations(filter: StatusFilter = "all"): Conversation[] {
+    const conversations = [...this.conversations.values()];
+    if (filter === "all") return conversations;
+    return conversations.filter((conversation) => conversation.status === filter);
+  }
+
+  updateStatus(id: string, status: ConversationStatus): Conversation | undefined {
+    const conversation = this.conversations.get(id);
+    if (!conversation) return undefined;
+    const updated = { ...conversation, status };
+    this.conversations.set(id, updated);
+    return updated;
   }
 
   getConversation(id: string): Conversation | undefined {
@@ -47,6 +64,7 @@ export class Store {
       id: randomUUID(),
       contactName: input.contactName,
       phone: input.phone,
+      status: "open",
       lastMessage: "",
       lastMessageAt: now(),
     };

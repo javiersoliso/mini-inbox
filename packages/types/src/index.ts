@@ -33,14 +33,33 @@ export const MessageSchema = z.object({
 });
 export type Message = z.infer<typeof MessageSchema>;
 
+export const ConversationStatusSchema = z.enum(["open", "resolved"]);
+export type ConversationStatus = z.infer<typeof ConversationStatusSchema>;
+
 export const ConversationSchema = z.object({
   id: z.string(),
   contactName: z.string(),
   phone: PhoneSchema,
+  status: ConversationStatusSchema,
   lastMessage: z.string(),
   lastMessageAt: DateTimeSchema,
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
+
+/** Filtro de la bandeja: un estado concreto o "all" para ver todas. */
+export const StatusFilterSchema = z.enum(["open", "resolved", "all"]);
+export type StatusFilter = z.infer<typeof StatusFilterSchema>;
+
+/** Sin ?status la API devuelve todas, como antes de existir el filtro. */
+export const ListConversationsQuerySchema = z.object({
+  status: StatusFilterSchema.default("all"),
+});
+
+/** Estricto: un campo de más (p. ej. "contactName") es un error y no se ignora en silencio. */
+export const UpdateConversationBodySchema = z.strictObject({
+  status: ConversationStatusSchema,
+});
+export type UpdateConversationBody = z.infer<typeof UpdateConversationBodySchema>;
 
 export const ConversationParamsSchema = z.object({
   id: z.string().min(1),
