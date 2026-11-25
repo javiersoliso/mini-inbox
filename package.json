@@ -1,0 +1,22 @@
+{
+  "name": "mini-inbox",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --filter \"./apps/*\" dev",
+    "test": "vitest run",
+    "check-types": "tsc -p packages/types && tsc -p apps/api && tsc -p apps/web",
+    "lint": "oxlint",
+    "fmt": "oxfmt"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.80.0",
+    "oxlint": "^1.95.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
