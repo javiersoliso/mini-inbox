@@ -1,4 +1,5 @@
 import { useConversations } from "../hooks/conversations";
+import { formatDateTime } from "../lib/format";
 
 interface ConversationListProps {
   selectedId: string | null;
@@ -23,7 +24,9 @@ export function ConversationList({ selectedId, onSelect }: ConversationListProps
           >
             <span className="conversation-header">
               <strong>{conversation.contactName}</strong>
-              <time>{conversation.lastMessageAt}</time>
+              <time dateTime={conversation.lastMessageAt}>
+                {formatDateTime(conversation.lastMessageAt)}
+              </time>
             </span>
             <span className="preview">{conversation.lastMessage || "Sin mensajes"}</span>
           </button>

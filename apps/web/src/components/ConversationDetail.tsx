@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { useConversation, useMessages, useSendMessage } from "../hooks/conversations";
+import { formatDateTime } from "../lib/format";
 
 interface ConversationDetailProps {
   id: string;
@@ -32,7 +33,7 @@ export function ConversationDetail({ id }: ConversationDetailProps) {
         {messages.data?.map((message) => (
           <li key={message.id} className={`message ${message.author}`}>
             <p>{message.text}</p>
-            <time>{message.sentAt}</time>
+            <time dateTime={message.sentAt}>{formatDateTime(message.sentAt)}</time>
           </li>
         ))}
       </ol>

@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { Conversation, CreateConversationBody, Message } from "@mini-inbox/types";
 import { type SeedConversation, seedConversations } from "./data/seed";
-import { formatProviderDate } from "./provider/date";
+import { parseProviderDate } from "./provider/date";
+
+const now = () => new Date().toISOString();
 
 /** "Base de datos" en memoria. Se reinicia con los datos de ejemplo cada vez que arranca la API. */
 export class Store {
@@ -10,9 +12,11 @@ export class Store {
 
   constructor(seed: SeedConversation[] = seedConversations) {
     for (const item of seed) {
+      // Frontera con el proveedor: aquí (y solo aquí) se convierte su formato de fecha.
       const messages: Message[] = item.messages.map((message) => ({
         ...message,
         conversationId: item.id,
+        sentAt: parseProviderDate(message.sentAt).toISOString(),
       }));
       const last = messages.at(-1);
       this.conversations.set(item.id, {
@@ -20,7 +24,7 @@ export class Store {
         contactName: item.contactName,
         phone: item.phone,
         lastMessage: last?.text ?? "",
-        lastMessageAt: last?.sentAt ?? formatProviderDate(new Date()),
+        lastMessageAt: last?.sentAt ?? now(),
       });
       this.messages.set(item.id, messages);
     }
@@ -44,7 +48,7 @@ export class Store {
       contactName: input.contactName,
       phone: input.phone,
       lastMessage: "",
-      lastMessageAt: formatProviderDate(new Date()),
+      lastMessageAt: now(),
     };
     this.conversations.set(conversation.id, conversation);
     this.messages.set(conversation.id, []);
@@ -61,7 +65,7 @@ export class Store {
       conversationId,
       author: "agent",
       text,
-      sentAt: formatProviderDate(new Date()),
+      sentAt: now(),
     };
     messages.push(message);
     this.conversations.set(conversationId, {
